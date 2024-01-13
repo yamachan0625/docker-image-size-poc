@@ -1,0 +1,37 @@
+# ビルド段階
+FROM node:latest as builder
+
+# アプリケーションのディレクトリを設定
+WORKDIR /usr/src/app
+
+# pnpmをインストール
+RUN npm install -g pnpm
+
+# package.jsonとpnpm-lock.yamlをコピー
+COPY package.json pnpm-lock.yaml ./
+
+# 依存関係をインストール
+RUN pnpm install
+
+# アプリケーションのソースコードをコピー
+COPY . .
+
+# アプリケーションをビルド
+RUN npm run build:tsc
+
+# 実行段階
+FROM node:alpine
+
+WORKDIR /usr/src/app
+
+# ビルド段階から/distディレクトリをコピー
+COPY --from=builder /usr/src/app/dist ./dist
+
+# 依存関係のあるnode_modulesもコピー
+COPY --from=builder /usr/src/app/node_modules ./node_modules
+
+# アプリケーションのポートを指定
+EXPOSE 3000
+
+# アプリケーションを実行
+CMD ["node", "dist/index.js"]

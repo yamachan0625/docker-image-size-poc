@@ -1,0 +1,40 @@
+# ビルド段階
+# Node.jsの公式イメージを使用
+FROM node:latest as builder
+
+# アプリケーションのディレクトリを設定
+WORKDIR /usr/src/app
+
+# package.jsonとpackage-lock.jsonをコピー
+COPY package*.json ./
+
+# esbuildをグローバルにインストール
+RUN npm install -g esbuild
+
+# 依存関係をインストール
+RUN npm install
+
+# アプリケーションのソースコードをコピー
+COPY . .
+
+# アプリケーションをビルド
+# ビルドされたファイルを/distに出力すると仮定
+RUN npm run build:esbuild
+
+# 実行段階
+# 軽量なNode.jsイメージを使用
+FROM node:alpine
+
+WORKDIR /usr/src/app
+
+# ビルド段階から/distディレクトリをコピー
+COPY --from=builder /usr/src/app/dist ./dist
+
+# 依存関係のあるnode_modulesもコピー
+COPY --from=builder /usr/src/app/node_modules ./node_modules
+
+# アプリケーションのポートを指定
+EXPOSE 3000
+
+# アプリケーションを実行
+CMD ["node", "dist/index.js"]

@@ -1,0 +1,24 @@
+# Node.jsの公式イメージを使用
+FROM node:latest
+
+# アプリケーションのディレクトリを設定
+WORKDIR /usr/src/app
+
+# package.jsonとpackage-lock.jsonをコピー
+COPY package*.json ./
+
+# 依存関係をインストール
+RUN npm install
+
+# アプリケーションのソースコードをコピー
+COPY . .
+
+# アプリケーションをビルド
+# ビルドされたファイルを/distに出力すると仮定
+RUN npm run build:tsc
+
+# アプリケーションのポートを指定
+EXPOSE 3000
+
+# アプリケーションを実行
+CMD ["node", "dist/index.js"]
